@@ -28,6 +28,8 @@
             type: "line",
             axisYType: "secondary",
             name: "Blå",
+            lineThickness: 5,
+            lineColor: "blue",
             showInLegend: false,
             dataPoints: dps
         },
@@ -35,6 +37,8 @@
                 type: "line",
                 axisYType: "secondary",
                 name: "Rød",
+                lineThickness: 5,
+                lineColor: "red",
                 showInLegend: false,
                 dataPoints: dps2
             }]
@@ -90,7 +94,7 @@
     async function connect(props) {
 
         const device = await navigator.bluetooth.requestDevice({
-            filters: [{ services: ['heart_rate'] }, { name: "Polar H10 BE6B8721" }],
+            filters: [{ services: ['heart_rate'] }],
             acceptAllDevices: false,
         })
         console.log("koblet til blå");
