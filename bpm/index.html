@@ -1,0 +1,188 @@
+﻿
+<html>
+<head>
+
+</head>
+<body>
+
+
+    <button onclick="connect({ onChange: printHeartRate }).catch(console.error)">Koble til Blå</button>
+
+    <button onclick="connect2({ onChange: printHeartRate2 }).catch(console.error)">Koble til Rød</button>
+
+    <div id="chartContainer" style="height: 370px; width:100%;"></div>
+    <div id="info">info</div> <div id="info2">info</div>
+
+</body>
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<script>
+
+
+    var dps = []; // dataPoints
+    var dps2 = []; // dataPoints
+    var chart = new CanvasJS.Chart("chartContainer", {
+        title: {
+            text: "BPM"
+        },
+        data: [{
+            type: "line",
+            axisYType: "secondary",
+            name: "Blå",
+            showInLegend: true,
+            dataPoints: dps
+        },
+            {
+                type: "line",
+                axisYType: "secondary",
+                name: "Rød",
+                showInLegend: true,
+                dataPoints: dps2
+            }]
+    });
+
+    var xVal = 0;
+    var yVal = 100;
+    var updateInterval = 1000;
+    var dataLength = 200; // number of dataPoints visible at any point
+
+    function updateChart(beat) {
+
+        dps.push({
+            x: xVal,
+            y: beat
+        });
+        xVal++;
+
+
+        if (dps.length > dataLength) {
+            dps.shift();
+        }
+
+        chart.render();
+    };
+    function updateChart2(beat2) {
+
+        dps2.push({
+            x: xVal,
+            y: beat2
+        });
+        xVal++;
+
+
+        if (dps2.length > dataLength) {
+            dps2.shift();
+        }
+
+        chart.render();
+    };
+
+
+
+    // setInterval(function () { updateChart() }, updateInterval);
+
+
+
+
+
+
+
+
+    async function connect(props) {
+
+        const device = await navigator.bluetooth.requestDevice({
+            filters: [{ services: ['heart_rate'] }, { name: "Polar H10 BE6B8721" }],
+            acceptAllDevices: false,
+        })
+        console.log("koblet til blå");
+
+        const server = await device.gatt.connect()
+        const service = await server.getPrimaryService('heart_rate')
+        const char = await service.getCharacteristic('heart_rate_measurement')
+        char.oncharacteristicvaluechanged = props.onChange
+        char.startNotifications()
+        return char
+    }
+    async function connect2(props2) {
+        const device2 = await navigator.bluetooth.requestDevice({
+            filters: [{ services: ['heart_rate'] }],
+            acceptAllDevices: false,
+        })
+        console.log("kobla til rød")
+        const server2 = await device2.gatt.connect()
+        const service2 = await server2.getPrimaryService('heart_rate')
+        const char2 = await service2.getCharacteristic('heart_rate_measurement')
+        char2.oncharacteristicvaluechanged = props2.onChange
+        char2.startNotifications()
+        return char2
+    }
+    let hrData = new Array(200).fill(10);
+    let hrData2 = new Array(200).fill(10)
+
+    // Basic example that prints a live updating chart of the heart rate history.
+    // Note: This should only be used as a quick/hacky test, it's not optimized.
+
+    //let hrData = new Array(200).fill(10)
+
+    //console.clear()
+   // setupConsoleGraphExample(100, 400)
+
+
+
+    function printHeartRate(event) {
+        const heartRate = event.target.value.getInt8(1)
+        const prev = hrData[hrData.length - 1]
+        hrData[hrData.length] = heartRate
+        hrData = hrData.slice(-200)
+        let arrow = ''
+        if (heartRate !== prev) arrow = heartRate > prev ? '⬆' : '⬇'
+        // console.clear()
+        // console.graph(hrData)
+        //console.log(`%c\n💚 ${heartRate} ${arrow}`, 'font-size: 24px;', '\n\n(To disconnect, refresh or close tab)\n\n');
+        //console.log(hrData);
+
+        updateChart(heartRate);
+        const elem = document.getElementById("info");
+        elem.innerHTML = "Blå: " + heartRate + " " + arrow;
+    }
+
+    function printHeartRate2(event) {
+        const heartRate2 = event.target.value.getInt8(1)
+        const prev2 = hrData2[hrData.length - 1]
+        hrData2[hrData2.length] = heartRate2
+        hrData2 = hrData2.slice(-200)
+        let arrow2 = ''
+        if (heartRate2 !== prev2) arrow2 = heartRate2 > prev2 ? '⬆' : '⬇'
+        // console.clear()
+        // console.graph(hrData)
+        //console.log(`%c\n💚 ${heartRate} ${arrow}`, 'font-size: 24px;', '\n\n(To disconnect, refresh or close tab)\n\n');
+        //console.log(hrData);
+
+        updateChart2(heartRate2);
+        const elem = document.getElementById("info2");
+        elem.innerHTML = "Rød: " + heartRate2 + " " + arrow2;
+    }
+
+
+
+    function setupConsoleGraphExample(height, width) {
+        const canvas = document.createElement('canvas')
+        const context = canvas.getContext('2d')
+        canvas.height = height
+        canvas.width = width
+        context.fillStyle = '#fff'
+        window.console.graph = data => {
+            const n = data.length
+            const units = Math.floor(width / n)
+            width = units * n
+            context.clearRect(0, 0, width, height)
+            for (let i = 0; i < n; ++i) {
+                context.fillRect(i * units, 0, units, 100 - (data[i] / 2))
+            }
+            console.log('%c ',
+                `font-size: 0; padding-left: ${width}px; padding-bottom: ${height}px;
+                   background: url("${canvas.toDataURL()}"), -webkit-linear-gradient(#eee, #888);`,
+            )
+        }
+    }
+</script>
+</html>
